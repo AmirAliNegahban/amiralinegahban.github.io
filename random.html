@@ -5,8 +5,9 @@ layout: default
   id="input" rows="8" cols="40"
   placeholder="One word per line"
   autocomplete="off"></textarea>
-<div id="output"></div>
+<br>
 <button id="select">select</button>
+<div id="output"></div>
 <script>
 select.onclick = () => {
   const words = input.value.split("\n").filter(i=>i.trim().length>0);
