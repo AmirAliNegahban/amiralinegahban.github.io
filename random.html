@@ -5,13 +5,11 @@ layout: default
   id="input" rows="8" cols="40"
   placeholder="One word per line"
   autocomplete="off"></textarea>
-<br>
-<div id="output">output</div>
-<br>
+<div id="output"></div>
 <button id="select">select</button>
 <script>
 select.onclick = () => {
   const words = input.value.split("\n").filter(i=>i.trim().length>0);
-  output.innerText = words[Math.floor(Math.random()*words.length)];
+  output.innerText = words[Math.floor(Math.random()*words.length)] ?? "";
 }
 </script>
