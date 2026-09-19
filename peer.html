@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>nostr peer</title>
+</head>
+<body>
+
+<section id="setup">
+  <a id="link"></a>
+  <p id="status"></p>
+</section>
+
+<section id="work" hidden>
+  <iframe id="frame"></iframe>
+  <p>
+  <textarea id="editor" rows="10" cols="80"></textarea>
+  <button id="show">Show</button>
+  <hr>
+  <div id="chat" style="height:300px;overflow-y:auto"></div>
+  <p>
+  <textarea id="chatIn" rows="2" cols="80"></textarea>
+  <button id="send">Send</button>
+</section>
+
+<script type="module">
+
+import * as nxstr from "https://cdn.jsdelivr.net/gh/nxrix/nxstr@1.0.2/index.js";
+
+const relays = [
+  "wss://relay.nostr.com",
+  //"wss://nostr.bitcoiner.social",
+  //"wss://nostr.mom",
+  //"wss://relay.snort.social"
+];
+
+const $ = (id) => document.getElementById(id);
+const params = new URLSearchParams(location.search);
+const host = !params.get("p");
+let peer = params.get("p");
+let linked = false;
+const seen = new Set();
+
+nxstr.generateKeys();
+
+if (host) {
+  const url = location.href.split(/[?#]/)[0] + "?p=" + nxstr.getPublicKey();
+  $("link").href = $("link").textContent = url;
+  $("status").textContent = "share this link, waiting for your peer...";
+} else {
+  $("link").remove();
+  $("editor").readOnly = true;
+  $("show").remove();
+  $("status").textContent = "connecting...";
+}
+
+const frame = $("frame"), editor = $("editor"), chat = $("chat"), chatIn = $("chatIn");
+editor.value = "<h1>hello</h1>";
+
+const addMsg = (who, text) => {
+  if (chat.children.length) chat.append(document.createElement("hr"));
+  chat.append(
+    Object.assign(document.createElement("div"), {textContent: who}),
+    Object.assign(document.createElement("div"), {textContent: text})
+  );
+  chat.scrollTop = chat.scrollHeight;
+};
+
+const setHtml = (html) => { editor.value = html; frame.srcdoc = html; };
+
+const connected = () => {
+  if (linked) return;
+  linked = true;
+  $("setup").hidden = true;
+  $("work").hidden = false;
+  setHtml(editor.value);
+};
+
+const publish = async (data) => {
+  const event = await nxstr.sign({
+    "content": await nxstr.encrypt(JSON.stringify(data), peer),
+    "kind": 20666,
+    "tags": [["p", peer]]
+  });
+  for (const s of sockets) if (s.readyState === 1) s.send(JSON.stringify(["EVENT", event]));
+};
+
+async function onMessage(e) {
+  const [type,,event] = JSON.parse(e.data);
+  if (type !== "EVENT" || !event || seen.has(event.id)) return;
+  seen.add(event.id);
+  if (event.kind !== 20666) return;
+  try { if (!(await nxstr.verify(event))) return; } catch { return; }
+  let data;
+  try { data = JSON.parse(await nxstr.decrypt(event.content, event.pubkey)); } catch { return; }
+  if (!peer) {
+    if (data.t === "hi") {
+      peer = event.pubkey;
+      connected();
+      publish({t:"ack", html: editor.value});
+    }
+  } else if (event.pubkey === peer) {
+    if (data.t === "ack") { connected(); setHtml(data.html); }
+    else if (data.t === "html") setHtml(data.html);
+    else if (data.t === "chat") addMsg("them", data.msg);
+  }
+}
+
+const sockets = relays.map((url) => {
+  const s = new WebSocket(url);
+  s.addEventListener("open", () => {
+    s.send(JSON.stringify(["REQ","dm",{ "kinds":[20666], "#p":[nxstr.getPublicKey()], "limit":0 }]));
+    if (!host && !linked) publish({t:"hi"});
+  });
+  s.addEventListener("message", onMessage);
+  return s;
+});
+
+const showBtn = $("show");
+if (showBtn) showBtn.onclick = () => { setHtml(editor.value); publish({t:"html", html: editor.value}); };
+
+const sendChat = () => {
+  const text = chatIn.value.trim();
+  if (!text || !linked) return;
+  chatIn.value = "";
+  addMsg("me", text);
+  publish({t:"chat", msg: text});
+};
+ $("send").onclick = sendChat;
+
+</script>
+
+</body>
+</html>
