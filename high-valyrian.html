@@ -1,5 +1,6 @@
 ---
 layout: default
+title: High Valyrian Translator
 ---
 
 <h1>High Valyrian Translator<br><br></h1>
@@ -76,7 +77,7 @@ const buildForms = () => {
 };
 
 const buildPhrases = () => {
-  ptable.innerHTML = "<tr><th>english</th><th>high valyrian</th></tr>";
+  ptable.innerHTML = "<tr><th>English</th><th>High Valyrian</th></tr>";
   const seen = new Set();
   for (const [en, hv] of Valyrian.P) {
     const key = en.toLowerCase() + "|" + hv.toLowerCase();
@@ -101,7 +102,7 @@ const run = () => {
   const [translated, alignment] = Valyrian.translate(text, mode);
   out.textContent = translated;
   align.textContent = alignment;
-  hint.textContent = "direction: " + (mode === "en" ? "english -> high valyrian" : "high valyrian -> english") + (dir.value === "auto" ? " (auto)" : " (manual)");
+  hint.textContent = "Direction: " + (mode === "en" ? "English -> High Valyrian" : "High Valyrian -> English") + (dir.value === "auto" ? " (auto)" : " (manual)");
 };
 
 const copyText = (t) => {
@@ -146,7 +147,7 @@ clear.onclick = () => {
 buildDict();
 //buildForms();
 //buildPhrases();
-src.value = "Valar dohaeris";
+src.value = "Valar dohaeris.";
 run();
 
 </script>
