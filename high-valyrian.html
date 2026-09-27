@@ -39,7 +39,7 @@ import * as Valyrian from "https://cdn.jsdelivr.net/gh/nxrix/high-valyrian-trans
 let lastMode = "en";
 
 const buildDict = () => {
-  dtable.innerHTML = "<tr><th>english</th><th>high valyrian</th><th>plural</th><th>type</th></tr>";
+  dtable.innerHTML = "<tr><th>english</th><th>High Valyrian</th><th>Plural</th><th>Type</th></tr>";
   for (const en of Object.keys(Valyrian.D).sort()) {
     const e = Valyrian.D[en];
     const row = dtable.insertRow(-1);
@@ -51,7 +51,7 @@ const buildDict = () => {
 };
 
 const buildForms = () => {
-  ftable.innerHTML = "<tr><th>high valyrian form</th><th>meaning</th><th>notes</th></tr>";
+  ftable.innerHTML = "<tr><th>High Valyrian form</th><th>Meaning</th><th>Notes</th></tr>";
   const seen = new Set();
   const rows = [];
   for (const k in Valyrian.PLX) {
