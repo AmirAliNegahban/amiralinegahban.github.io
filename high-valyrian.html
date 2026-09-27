@@ -1,0 +1,153 @@
+---
+layout: default
+---
+
+<h1>High Valyrian Translator</h1>
+
+<textarea id="src" rows="8" cols="32" placeholder="..."></textarea>
+<br>
+<select id="dir">
+  <option value="auto">Auto detect</option>
+  <option value="en">English -> High Valyrian</option>
+  <option value="hv">High Valyrian -> English</option>
+</select>
+<br>
+<button id="go">Translate</button>
+<button id="swap">Swap</button>
+<button id="copy">Copy</button>
+<button id="clear">Clear</button>
+
+<p id="hint"></p>
+
+<h2>Result</h2>
+<pre id="out"></pre>
+<pre id="align"></pre>
+
+<hr>
+
+<!--h2>Dictionary</h2>
+<table id="dtable" border="1" cellpadding="4" cellspacing="0"></table>
+
+<h2>Recognized High Valyrian forms</h2>
+<table id="ftable" border="1" cellpadding="4" cellspacing="0"></table>
+
+<h2>Phrases and idioms</h2>
+<table id="ptable" border="1" cellpadding="4" cellspacing="0"></table-->
+
+<script type="module">
+import * as Valyrian from "https://cdn.jsdelivr.net/gh/nxrix/high-valyrian-translator@4.0.0/valyrian.js";
+
+let lastMode = "en";
+
+const buildDict = () => {
+  dtable.innerHTML = "<tr><th>english</th><th>high valyrian</th><th>plural</th><th>type</th></tr>";
+  for (const en of Object.keys(Valyrian.D).sort()) {
+    const e = Valyrian.D[en];
+    const row = dtable.insertRow(-1);
+    row.insertCell(0).textContent = en;
+    row.insertCell(1).textContent = e[0];
+    row.insertCell(2).textContent = e[2] || "";
+    row.insertCell(3).textContent = Valyrian.KIND[e[1]] || e[1];
+  }
+};
+
+const buildForms = () => {
+  ftable.innerHTML = "<tr><th>high valyrian form</th><th>meaning</th><th>notes</th></tr>";
+  const seen = new Set();
+  const rows = [];
+  for (const k in Valyrian.PLX) {
+    const d = Valyrian.de(k).toLowerCase();
+    if (seen.has(d)) continue;
+    seen.add(d);
+    rows.push([k, Valyrian.PLX[k], "plural"]);
+  }
+  for (const k in Valyrian.F) {
+    const d = Valyrian.de(k).toLowerCase();
+    if (seen.has(d)) continue;
+    seen.add(d);
+    rows.push([k, Valyrian.F[k].en, (Valyrian.F[k].tags || "") + " of " + Valyrian.F[k].lemma]);
+  }
+  rows.sort((a, b) => a[0] < b[0] ? -1 : 1);
+  for (const [k, v, note] of rows) {
+    const row = ftable.insertRow(-1);
+    row.insertCell(0).textContent = k;
+    row.insertCell(1).textContent = v;
+    row.insertCell(2).textContent = note;
+  }
+};
+
+const buildPhrases = () => {
+  ptable.innerHTML = "<tr><th>english</th><th>high valyrian</th></tr>";
+  const seen = new Set();
+  for (const [en, hv] of Valyrian.P) {
+    const key = en.toLowerCase() + "|" + hv.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const row = ptable.insertRow(-1);
+    row.insertCell(0).textContent = en;
+    row.insertCell(1).textContent = hv;
+  }
+};
+
+const run = () => {
+  const text = src.value;
+  if (text.trim().length === 0) {
+    out.textContent = "";
+    align.textContent = "";
+    hint.textContent = "";
+    return;
+  }
+  const mode = dir.value === "auto" ? Valyrian.detect(text) : dir.value;
+  lastMode = mode;
+  const [translated, alignment] = Valyrian.translate(text, mode);
+  out.textContent = translated;
+  align.textContent = alignment;
+  hint.textContent = "direction: " + (mode === "en" ? "english -> high valyrian" : "high valyrian -> english") + (dir.value === "auto" ? " (auto)" : " (manual)");
+};
+
+const copyText = (t) => {
+  const done = () => {
+    copy.textContent = "Copied!";
+    setTimeout(() => { copy.textContent = "Copy"; }, 1200);
+  };
+  const fallback = () => {
+    const ta = document.createElement("textarea");
+    ta.value = t;
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand("copy"); done(); } catch (e) {}
+    document.body.removeChild(ta);
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(done).catch(fallback);
+  else fallback();
+};
+
+src.oninput = run;
+dir.onchange = run;
+go.onclick = run;
+
+swap.onclick = () => {
+  if (out.textContent.length === 0) return;
+  src.value = out.textContent;
+  if (dir.value === "auto") dir.value = lastMode === "en" ? "hv" : "en";
+  else dir.value = dir.value === "en" ? "hv" : "en";
+  run();
+};
+
+copy.onclick = () => {
+  if (out.textContent.length > 0) copyText(out.textContent);
+};
+
+clear.onclick = () => {
+  src.value = "";
+  run();
+  src.focus();
+};
+
+//buildDict();
+//buildForms();
+//buildPhrases();
+src.value = "Valar dohaeris";
+run();
+
+</script>
