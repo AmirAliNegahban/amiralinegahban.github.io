@@ -59,6 +59,7 @@ const fill = (table, head, rows, search) => {
     if (list.length > n) {
       const cell = table.insertRow(-1).insertCell(0);
       cell.textContent = "Show more";
+      cell.style.textDecoration = "underline";
       cell.style.cursor = "pointer";
       cell.onclick = more;
     }
