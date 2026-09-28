@@ -26,33 +26,57 @@ title: High Valyrian Translator
 <hr>
 
 <h2>Dictionary<br><br></h2>
+<input id="dsearch" placeholder="Search...">
 <table id="dtable" cellpadding="4" cellspacing="0"></table>
 
-<!--h2>Recognized High Valyrian forms</h2>
-<table id="ftable" cellpadding="4" cellspacing="0"></table>
+<h2>Phrases and idioms<br><br></h2>
+<input id="psearch" placeholder="Search...">
+<table id="ptable" cellpadding="4" cellspacing="0"></table>
 
-<h2>Phrases and idioms</h2>
-<table id="ptable" cellpadding="4" cellspacing="0"></table-->
+<h2>Recognized High Valyrian forms<br><br></h2>
+<input id="fsearch" placeholder="Search...">
+<table id="ftable" cellpadding="4" cellspacing="0"></table>
 
 <script type="module">
 import * as Valyrian from "https://cdn.jsdelivr.net/gh/nxrix/high-valyrian-translator@4.0.1/valyrian.js";
 
 let lastMode = "en";
 
+const fill = (table, head, rows, search) => {
+  const draw = () => {
+    const q = search.value.trim().toLowerCase();
+    table.innerHTML = "<tr>" + head.map(h => "<th>" + h + "</th>").join("") + "</tr>";
+    for (const r of rows.filter(r => r.join(" ").toLowerCase().includes(q)).slice(0, 32)) {
+      const row = table.insertRow(-1);
+      r.forEach((c, i) => row.insertCell(i).textContent = c);
+    }
+  };
+  search.oninput = draw;
+  draw();
+};
+
 const buildDict = () => {
-  dtable.innerHTML = "<tr><th>english</th><th>High Valyrian</th><th>Plural</th><th>Type</th></tr>";
+  const rows = [];
   for (const en of Object.keys(Valyrian.D).sort()) {
     const e = Valyrian.D[en];
-    const row = dtable.insertRow(-1);
-    row.insertCell(0).textContent = en;
-    row.insertCell(1).textContent = e[0];
-    row.insertCell(2).textContent = e[2] || "";
-    row.insertCell(3).textContent = Valyrian.KIND[e[1]] || e[1];
+    rows.push([en, e[0], e[2] || "", Valyrian.KIND[e[1]] || e[1]]);
   }
+  fill(dtable, ["english", "High Valyrian", "Plural", "Type"], rows, dsearch);
+};
+
+const buildPhrases = () => {
+  const seen = new Set();
+  const rows = [];
+  for (const [en, hv] of Valyrian.P) {
+    const key = en.toLowerCase() + "|" + hv.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    rows.push([en, hv]);
+  }
+  fill(ptable, ["English", "High Valyrian"], rows, psearch);
 };
 
 const buildForms = () => {
-  ftable.innerHTML = "<tr><th>High Valyrian form</th><th>Meaning</th><th>Notes</th></tr>";
   const seen = new Set();
   const rows = [];
   for (const k in Valyrian.PLX) {
@@ -68,25 +92,7 @@ const buildForms = () => {
     rows.push([k, Valyrian.F[k].en, (Valyrian.F[k].tags || "") + " of " + Valyrian.F[k].lemma]);
   }
   rows.sort((a, b) => a[0] < b[0] ? -1 : 1);
-  for (const [k, v, note] of rows) {
-    const row = ftable.insertRow(-1);
-    row.insertCell(0).textContent = k;
-    row.insertCell(1).textContent = v;
-    row.insertCell(2).textContent = note;
-  }
-};
-
-const buildPhrases = () => {
-  ptable.innerHTML = "<tr><th>English</th><th>High Valyrian</th></tr>";
-  const seen = new Set();
-  for (const [en, hv] of Valyrian.P) {
-    const key = en.toLowerCase() + "|" + hv.toLowerCase();
-    if (seen.has(key)) continue;
-    seen.add(key);
-    const row = ptable.insertRow(-1);
-    row.insertCell(0).textContent = en;
-    row.insertCell(1).textContent = hv;
-  }
+  fill(ftable, ["High Valyrian form", "Meaning", "Notes"], rows, fsearch);
 };
 
 const run = () => {
@@ -145,8 +151,8 @@ clear.onclick = () => {
 };
 
 buildDict();
-//buildForms();
-//buildPhrases();
+buildPhrases();
+buildForms();
 src.value = "Valar dohaeris.";
 run();
 
