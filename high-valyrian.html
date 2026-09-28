@@ -29,9 +29,13 @@ title: High Valyrian Translator
 <input id="dsearch" placeholder="Search...">
 <table id="dtable" cellpadding="4" cellspacing="0"></table>
 
+<hr>
+
 <h2>Phrases and idioms<br><br></h2>
 <input id="psearch" placeholder="Search...">
 <table id="ptable" cellpadding="4" cellspacing="0"></table>
+
+<hr>
 
 <h2>Recognized High Valyrian forms<br><br></h2>
 <input id="fsearch" placeholder="Search...">
@@ -46,10 +50,11 @@ const fill = (table, head, rows, search) => {
   const draw = () => {
     const q = search.value.trim().toLowerCase();
     table.innerHTML = "<tr>" + head.map(h => "<th>" + h + "</th>").join("") + "</tr>";
-    for (const r of rows.filter(r => r.join(" ").toLowerCase().includes(q)).slice(0, 32)) {
+    for (const r of rows.filter(r => r.join(" ").toLowerCase().includes(q)).slice(0, 16)) {
       const row = table.insertRow(-1);
       r.forEach((c, i) => row.insertCell(i).textContent = c);
     }
+    if (list.length > 16) table.insertRow(-1).insertCell(0).textContent = "...";
   };
   search.oninput = draw;
   draw();
@@ -61,7 +66,7 @@ const buildDict = () => {
     const e = Valyrian.D[en];
     rows.push([en, e[0], e[2] || "", Valyrian.KIND[e[1]] || e[1]]);
   }
-  fill(dtable, ["english", "High Valyrian", "Plural", "Type"], rows, dsearch);
+  fill(dtable, ["English", "High Valyrian", "Plural", "Type"], rows, dsearch);
 };
 
 const buildPhrases = () => {
