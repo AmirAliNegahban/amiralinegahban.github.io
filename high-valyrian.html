@@ -47,14 +47,28 @@ import * as Valyrian from "https://cdn.jsdelivr.net/gh/nxrix/high-valyrian-trans
 let lastMode = "en";
 
 const fill = (table, head, rows, search) => {
-  const draw = () => {
-    const q = search.value.trim().toLowerCase();
-    table.innerHTML = "<tr>" + head.map(h => "<th>" + h + "</th>").join("") + "</tr>";
-    for (const r of rows.filter(r => r.join(" ").toLowerCase().includes(q)).slice(0, 16)) {
+  let n = 0;
+  let list = [];
+  const more = () => {
+    if (table.rows.length > 1 && table.rows[table.rows.length - 1].cells.length === 1) table.deleteRow(-1);
+    for (const r of list.slice(n, n + 16)) {
       const row = table.insertRow(-1);
       r.forEach((c, i) => row.insertCell(i).textContent = c);
     }
-    if (list.length > 16) table.insertRow(-1).insertCell(0).textContent = "...";
+    n += 16;
+    if (list.length > n) {
+      const cell = table.insertRow(-1).insertCell(0);
+      cell.textContent = "Show more";
+      cell.style.cursor = "pointer";
+      cell.onclick = more;
+    }
+  };
+  const draw = () => {
+    const q = search.value.trim().toLowerCase();
+    list = rows.filter(r => r.join(" ").toLowerCase().includes(q));
+    table.innerHTML = "<tr>" + head.map(h => "<th>" + h + "</th>").join("") + "</tr>";
+    n = 0;
+    more();
   };
   search.oninput = draw;
   draw();
